@@ -145,10 +145,186 @@ class InterviewAgent:
             
         return suggestions[:3]  # Return top 3 suggestions
 
-def create_interview_agents(domain: str) -> Dict[str, InterviewAgent]:
+def create_interview_agents(domain: str = None) -> Dict[str, InterviewAgent]:
     """Create a set of interview agents for different roles"""
+    domains = ["Software Development", "Data Science", "Marketing"]
+    domain = domain if domain in domains else domains[0]
+    
     return {
         "technical": InterviewAgent("technical_expert", domain),
         "improvement": InterviewAgent("improvement_coach", domain),
         "clarification": InterviewAgent("clarification_seeker", domain)
-    } 
+    }
+
+def get_rule_based_chat_response(user_input: str, current_question: str, domain: str) -> str:
+    """Generate a context-aware chat response to user follow-up questions"""
+    # Extract the main topic from the current question
+    topic = current_question.lower()
+    
+    # Domain-specific knowledge bases
+    domain_knowledge = {
+        "Software Development": {
+            "clean code": [
+                "Clean code implementation involves several key principles:",
+                "1. **Meaningful Names**: Use clear, intention-revealing names for variables, functions, and classes",
+                "2. **Single Responsibility**: Each function or class should do one thing and do it well",
+                "3. **DRY (Don't Repeat Yourself)**: Avoid code duplication through proper abstraction",
+                "4. **SOLID Principles**: Follow Object-Oriented Design principles",
+                "5. **Comments and Documentation**: Write self-documenting code with necessary comments",
+                "6. **Error Handling**: Implement proper exception handling and validation",
+                "7. **Unit Testing**: Write comprehensive tests for your code"
+            ],
+            "architecture": [
+                "Software architecture best practices include:",
+                "1. **Layered Architecture**: Separate concerns into presentation, business, and data layers",
+                "2. **Microservices**: Break down complex applications into manageable services",
+                "3. **API Design**: Create clear, consistent, and well-documented APIs",
+                "4. **Scalability**: Design for horizontal and vertical scaling",
+                "5. **Security**: Implement security at every layer"
+            ],
+            "testing": [
+                "Effective testing strategies include:",
+                "1. **Unit Testing**: Test individual components in isolation",
+                "2. **Integration Testing**: Test component interactions",
+                "3. **End-to-End Testing**: Test complete user workflows",
+                "4. **Test-Driven Development (TDD)**: Write tests before implementation",
+                "5. **Continuous Integration**: Automate testing in your pipeline"
+            ]
+        },
+        "Data Science": {
+            "machine learning": [
+                "Key machine learning concepts:",
+                "1. **Feature Engineering**: Create relevant features from raw data",
+                "2. **Model Selection**: Choose appropriate algorithms for your problem",
+                "3. **Cross-Validation**: Ensure model generalization",
+                "4. **Hyperparameter Tuning**: Optimize model parameters",
+                "5. **Model Evaluation**: Use appropriate metrics for assessment"
+            ],
+            "data analysis": [
+                "Data analysis best practices:",
+                "1. **Data Cleaning**: Handle missing values and outliers",
+                "2. **Exploratory Analysis**: Understand data distributions and relationships",
+                "3. **Statistical Testing**: Apply appropriate statistical methods",
+                "4. **Visualization**: Create informative plots and charts",
+                "5. **Reporting**: Communicate findings effectively"
+            ]
+        },
+        "Marketing": {
+            "digital marketing": [
+                "Digital marketing strategies include:",
+                "1. **SEO Optimization**: Improve search engine rankings",
+                "2. **Content Marketing**: Create valuable, relevant content",
+                "3. **Social Media**: Engage with audiences effectively",
+                "4. **Email Marketing**: Build and nurture customer relationships",
+                "5. **Analytics**: Track and measure campaign performance"
+            ],
+            "brand management": [
+                "Brand management principles:",
+                "1. **Brand Identity**: Develop consistent brand elements",
+                "2. **Positioning**: Create unique market positioning",
+                "3. **Customer Experience**: Ensure consistent brand experience",
+                "4. **Brand Monitoring**: Track brand perception and mentions",
+                "5. **Crisis Management**: Handle brand-related issues"
+            ]
+        }
+    }
+
+    # Identify the relevant topic from the question
+    relevant_topic = None
+    for topic in domain_knowledge[domain].keys():
+        if topic in current_question.lower():
+            relevant_topic = topic
+            break
+
+    user_input_lower = user_input.lower()
+    
+    # Handle different types of questions
+    if "explain" in user_input_lower or "detail" in user_input_lower or "what is" in user_input_lower:
+        if relevant_topic and relevant_topic in domain_knowledge[domain]:
+            return "\n".join(domain_knowledge[domain][relevant_topic])
+        return f"The concept in this question relates to core principles in {domain}. The key point to understand is how this applies in real-world scenarios and what best practices are recommended by industry experts."
+    
+    elif "example" in user_input_lower or "instance" in user_input_lower or "sample" in user_input_lower:
+        examples = {
+            "clean code": """Here's a practical example of clean code:
+
+```python
+# Bad code
+def p(x, y):
+    return x + y
+
+# Clean code
+def add_numbers(first_number: float, second_number: float) -> float:
+    "Add two numbers and return their sum."
+    return first_number + second_number
+```""",
+            "machine learning": """Here's a practical example of machine learning pipeline:
+
+```python
+# Data preprocessing
+X_train = preprocess_data(raw_data)
+# Feature engineering
+features = create_features(X_train)
+# Model training
+model = RandomForestClassifier()
+model.fit(features, y_train)
+```""",
+            "digital marketing": """Example digital marketing campaign structure:
+1. Goal: Increase website traffic by 50%
+2. Strategy: Content marketing + SEO
+3. Tactics:
+   - Weekly blog posts
+   - Social media sharing
+   - Email newsletter
+4. Metrics: Traffic, engagement, conversions"""
+        }
+        if relevant_topic in examples:
+            return examples[relevant_topic]
+        
+        if domain == "Software Development":
+            return "A good example would be how clean code principles apply in a large-scale project. Consider how naming conventions, modularity, and testing impact maintainability and collaboration."
+        elif domain == "Data Science":
+            return "For instance, when building a machine learning model, you need to consider data preprocessing, feature selection, model choice, and evaluation metrics appropriate for your specific problem."
+        else:
+            return "For example, in a marketing campaign, you would analyze your target audience, set measurable goals, select appropriate channels, create compelling content, and track your results."
+    
+    elif "difficult" in user_input_lower or "challenge" in user_input_lower or "hard" in user_input_lower:
+        return f"The challenging part of this topic is balancing theoretical knowledge with practical implementation. In {domain}, you often need to adapt best practices to specific contexts while considering constraints like time, resources, and team expertise."
+    
+    elif "best practice" in user_input_lower or "tip" in user_input_lower or "advice" in user_input_lower:
+        practices = {
+            "clean code": """Clean Code Best Practices:
+1. Write self-documenting code
+2. Follow SOLID principles
+3. Keep functions small and focused
+4. Use meaningful names
+5. Write tests first (TDD)
+6. Regular code reviews
+7. Continuous refactoring""",
+            "machine learning": """ML Best Practices:
+1. Start simple, then iterate
+2. Cross-validate everything
+3. Handle data leakage
+4. Version control your data
+5. Document assumptions
+6. Monitor model performance""",
+            "digital marketing": """Digital Marketing Best Practices:
+1. Know your audience
+2. Test and measure everything
+3. Focus on mobile-first
+4. Create valuable content
+5. Optimize for conversion"""
+        }
+        if relevant_topic in practices:
+            return practices[relevant_topic]
+        
+        if domain == "Software Development":
+            return "Some best practices include: writing self-documenting code, following SOLID principles, implementing continuous integration, conducting code reviews, and writing comprehensive tests."
+        elif domain == "Data Science":
+            return "Key best practices include: thoroughly understanding your data before modeling, validating properly to avoid leakage, starting with simple models, and documenting your assumptions and process."
+        else:
+            return "Important best practices include: defining clear objectives, understanding your audience, testing different approaches, measuring results, and continuously improving based on feedback."
+    
+    else:
+        # Default response
+        return f"That's an interesting aspect of the question. To answer well, consider both theoretical foundations and practical applications in {domain}. Industry experience suggests focusing on real-world implications and current best practices." 
